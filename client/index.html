@@ -18,12 +18,17 @@
     </style>
 
     <script>
-      var host = location.origin.replace(/^http/, 'ws')
+      var host = location.origin.replace(/^http/, 'ws');
       var ws = new WebSocket(host);
+
+      ws.onopen = function() {
+        ws.send(JSON.stringify({type: "join", name: "Mats"}));
+      };
+
       ws.onmessage = function (event) {
         console.log(event);
         var li = document.createElement('li');
-        li.innerHTML = JSON.parse(event.data);
+        li.innerHTML = event.data;
         document.querySelector('#pings').appendChild(li);
       };
     </script>
