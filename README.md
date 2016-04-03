@@ -14,3 +14,9 @@ heroku create
 git push heroku master
 heroku open
 ```
+
+## View logs
+
+``` bash
+heroku logs --tail
+```

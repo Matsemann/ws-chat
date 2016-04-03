@@ -6,26 +6,34 @@
 
 </head>
 <body>
-<h1>BEKKChat</h1>
 
-<div class="name">
-    <form id="nameform">
-        <input type="text" id="name" placeholder="Your name" />
-        <button type="submit">JOIN</button>
-    </form>
+<div class="wrapper">
+
+
+    <header>
+        <h1>Chat</h1>
+    </header>
+
+    <div>
+        <form id="nameform">
+            <input type="text" id="name" placeholder="Your name"/>
+            <button type="submit">JOIN</button>
+        </form>
+
+        <form id="sendform">
+            <input type="text" id="sendmessage" placeholder="Message" autocomplete="off"/>
+            <button type="submit" id="sendbutton" disabled>SEND</button>
+        </form>
+    </div>
+
+    <main id="messages"></main>
+
+    <aside class="users">
+        <h2>Online</h2>
+        <div id="users"></div>
+    </aside>
+
 </div>
-
-<div class="send">
-    <form id="send">
-        <input type="text" id="message" placeholder="Message" />
-        <button type="submit" id="sendbutton" disabled>SEND</button>
-    </form>
-</div>
-
-<div id="messages"></div>
-
-<div id="users"></div>
-
 
 <script type="text/javascript" src="script.js"></script>
 </body>
