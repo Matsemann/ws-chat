@@ -21,9 +21,9 @@ document.querySelector('#nameform').addEventListener('submit', function (event) 
 document.querySelector('#sendform').addEventListener('submit', function (event) {
     event.preventDefault();
 
-    var messageElement = document.querySelector("#sendmessage");
-    var message = messageElement.value;
-    messageElement.value = ''; // reset
+    var sendmessageInput = document.querySelector("#sendmessage");
+    var message = sendmessageInput.value;
+    sendmessageInput.value = ''; // reset
 
     websocket.send(JSON.stringify({
         type: 'message',
@@ -32,7 +32,7 @@ document.querySelector('#sendform').addEventListener('submit', function (event) 
 });
 
 
-websocket.onmessage = function onmessage(event) {
+websocket.onmessage = function(event) {
     var data = JSON.parse(event.data);
     console.log(data);
 
@@ -75,9 +75,6 @@ function renderSingleMessage(singleMessage) {
     `;
 
     messageElement.innerHTML = messageHtml + messageElement.innerHTML;
-}
-
-function renderUsers(data) {
 }
 
 function renderActiveUsers(data) {
