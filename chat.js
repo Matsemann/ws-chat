@@ -15,14 +15,12 @@ class Chat {
             ws.on('message', (stringData) => {
                 var data = JSON.parse(stringData);
 
-                if (data.type === 'join') {
-                    this.sendLatestMessages(ws);
-                    this.userJoined(data.name, ws);
+                if (data.type === 'name') {
+                    this.setName(sanitizeHtml(data.name), ws);
                 } else if (data.type === 'message') {
-                    this.messageSent(data.message, ws);
+                    this.messageSent(sanitizeHtml(data.message), ws);
                 }
             });
-
 
             ws.on("close", () => {
                 this.userLeft(ws);
@@ -31,7 +29,9 @@ class Chat {
     }
 
     sendToAll(data) {
-        this.websocketServer.clients.forEach((ws) => {
+        this.websocketServer.clients
+            .filter((ws) => ws.username) // only send to those who have joined with a name
+            .forEach((ws) => {
             ws.send(JSON.stringify(data));
         });
     }
@@ -44,6 +44,17 @@ class Chat {
         }));
     }
 
+    setName(name, ws) {
+        if (ws.username) {
+            if (ws.username !== name) {
+                this.userRenamed(name, ws);
+            }
+        } else {
+            this.sendLatestMessages(ws);
+            this.userJoined(name, ws);
+        }
+    }
+
     userJoined(name, ws) {
         ws.username = name;
         console.log(`[JOINED] ${ws._socket.remoteAddress}/${ws.username} joined`);
@@ -54,6 +65,25 @@ class Chat {
             type: 'users',
             action: 'joined',
             name: name,
+            users: activeUsers
+        };
+
+        this.sendToAll(userData);
+    }
+
+    userRenamed(name, ws) {
+        var oldname = ws.username;
+
+        ws.username = name;
+        console.log(`[RENAMED] ${ws._socket.remoteAddress}/${ws.username} from ${oldname}`);
+
+        var activeUsers = this.getActiveUsers();
+
+        var userData = {
+            type: 'users',
+            action: 'renamed',
+            name: name,
+            oldname: oldname,
             users: activeUsers
         };
 
@@ -77,24 +107,34 @@ class Chat {
     }
 
     getActiveUsers() {
-        return this.websocketServer.clients.map((ws) => ws.username);
+        return this.websocketServer.clients
+            .map((ws) => ws.username)
+            .filter((name) => name);
     }
 
     messageSent(message, ws) {
         console.log(`[MESSAGE] ${ws._socket.remoteAddress}/${ws.username} sent: ${message}`);
 
+        var time = new Date();
+
         this.queue.add({
             name: ws.username,
-            message: message
+            message: message,
+            time: time
         });
 
         this.sendToAll({
             type: 'message',
             name: ws.username,
-            message: message
+            message: message,
+            time: time
         });
     }
 
+}
+
+function sanitizeHtml(string) {
+    return string.replace(/</g, '&lt;').replace(/>/g, '&gt;');
 }
 
 module.exports = Chat;
