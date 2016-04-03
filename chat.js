@@ -26,6 +26,13 @@ class Chat {
                 this.userLeft(ws);
             })
         });
+
+        setInterval(() => {
+            console.log("pinging all clients");
+            this.websocketServer.clients.forEach((ws) => {
+                ws.ping();
+            });
+        }, 30 * 1000);
     }
 
     sendToAll(data) {
