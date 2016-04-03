@@ -1,4 +1,4 @@
-var websocketServerUrl = 'ws://localhost:5000';
+var websocketServerUrl = 'ws://bekk-chat.herokuapps.com';
 var websocket = new WebSocket(websocketServerUrl);
 
 var messageElement = document.querySelector('#messages');
