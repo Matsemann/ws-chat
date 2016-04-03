@@ -1,6 +1,7 @@
 var websocketServerUrl = 'ws://localhost:5000';
 var websocket = new WebSocket(websocketServerUrl);
 
+var messageElement = document.querySelector('#messages');
 
 document.querySelector('#nameform').addEventListener('submit', function (event) {
     event.preventDefault();
@@ -30,8 +31,32 @@ document.querySelector('#send').addEventListener('submit', function (event) {
 
 
 websocket.onmessage = function onmessage(event) {
-    console.log(event);
-////    var li = document.createElement('li');
-////    li.innerHTML = event.data;
-////    document.querySelector('#pings').appendChild(li);
+    var data = JSON.parse(event.data);
+    console.log(data);
+
+    if (data.type === 'messages') {
+        renderMessages(data.messages);
+    } else if (data.type === 'message') {
+        renderSingleMessage(data);
+    }
 };
+
+
+function renderMessages(messages) {
+    for (var i = 0; i < messages.length; i++) {
+        var singleMessage = messages[i];
+        renderSingleMessage(singleMessage);
+    }
+}
+
+function renderSingleMessage(singleMessage) {
+    var messageHtml = `
+        <div class="message">
+            <span class="name">${singleMessage.name}: </span>
+            ${singleMessage.message}
+            <span class="time">${singleMessage.time}</span>
+        </div>
+    `;
+
+    messageElement.innerHTML = messageHtml + messageElement.innerHTML;
+}
