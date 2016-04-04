@@ -86,7 +86,7 @@ button[disabled] {
 
 #messages, #users {
     height: 30rem;
-    overflow-y: scroll;
+    overflow-y: auto;
     word-wrap: break-word;
 }
 

@@ -28,7 +28,7 @@ class Chat {
         });
 
         setInterval(() => {
-            console.log("pinging all clients");
+            console.log("pinging all clients so heroku doesn't close the connection");
             this.websocketServer.clients.forEach((ws) => {
                 ws.ping();
             });

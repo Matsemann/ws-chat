@@ -58,6 +58,7 @@ function renderSingleMessage(singleMessage) {
     var time = new Date(singleMessage.time);
     var hour = time.getHours();
     var minutes = time.getMinutes();
+    var seconds = time.getSeconds();
 
     if (hour < 10) {
         hour = '0' + hour;
@@ -65,11 +66,14 @@ function renderSingleMessage(singleMessage) {
     if (minutes < 10) {
         minutes = '0' + minutes;
     }
+    if (seconds < 10) {
+        seconds = '0' + seconds;
+    }
 
     var messageHtml = `
         <div class="message">
             <span class="name">${singleMessage.name}</span>
-            <span class="time">${hour}:${minutes}</span>
+            <span class="time">${hour}:${minutes}:${seconds}</span>
             <span class="text">${singleMessage.message}</span>
         </div>
     `;
