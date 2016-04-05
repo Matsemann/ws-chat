@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta http-equiv="content-type" content="text/html; charset=utf-8" />
+    <title>Webutvikling 101</title>
+    <link rel="stylesheet" href="https://cdn.rawgit.com/bekk/remark/master/dist/bekk.css">
+    <link rel="stylesheet" href="slides.css">
+  </head>
+  <body class="bekk-black">
+    <textarea id="source">
+
+class: front-page
+  # Webutvikling 101
+  ## DEL 3<br>Chatteoppgave
+
+---
+#Introduksjon
+
+Slidesettet ligner de tidligere presentasjonene, med litt teori og etterfølgende oppgaver.
+Siden det ikke blir felles gjennomgang av oppgavene, forklares løsningsforslaget etter hver oppgave.
+
+Eksempel på det som skal lages ligger på http://bekk-chat.herokuapp.com/
+Test det gjerne ut litt så du har et klart bilde av hva som skal lages.
+Man må velge et navn og trykke join for å se chatten og kunne chatte. Til høyre i bildet
+er det en liste over alle brukere som er tilstede. Meldinger vises når noen blir med, bytter navn eller forsvinner.
+Kan bytte navn ved å skrive inn et nytt navn og trykke join.
+
+I denne oppgaven er det selve chatte-klienten som skal lages. Klienten kobles opp mot en felles server slik at
+alle deler samme chat.
+
+---
+# Kode
+
+I `assignment` mappa, kjør de samme kommandoene som tidligere for å få opp en server:
+
+```bash
+npm install
+npm start
+```
+
+Du kan deretter åpne klienten ved å gå til http://localhost:5000
+
+Klienten ligger i `assignment/client` mappen og består av 3 filer. Dere får ferdig oppsatt HTML og CSS, så i denne
+oppgaven er det i utgangspunktet bare Javascript i `script.js` som skal skrives. Det kan uansett være lurt å titte på HTML, for å vite
+hvilke elementer og IDer som kan hentes ut i Javascripten.
+
+
+---
+
+# DOM APIet - Repetisjon
+
+Kan hente ut elementer vha `queryselector`. `#` foran betyr man henter med id, `.` henter med klasse og ingenting er rett på element-type.
+
+```
+var el1 = document.querySelector('main'); // matcher <main>
+var el2 = document.querySelector('#name'); // matcher <input id="name">
+var el3 = document.querySelector('.klasse'); // matcher <div class=".klasse">
+```
+
+--
+
+Kan lese ut og endre forskjellige verdier
+
+```
+var inputText = el2.value; // henter ut verdien i input-felt
+el2.value = 'heihei'; // setter verdien
+
+var el2.disabled = true; // disabler input-felt, knapp e.l.
+
+var htmlInnhold = el1.innerHTML; // leser ut html fra et element
+el1.innerHTML = '<b>fet skrift</b>'; // setter innholdet til et element
+```
+
+---
+
+# Forms og eventlisteners - Repetisjon
+
+Det er forskjellige events man kan lytte på, f. eks. click på elementer eller submit av et form.
+Man legger til en funksjon som vil bli kalt når et event inntreffer
+
+```
+document.querySelector(`#minForm`).addEventListener('submit', function(event) {
+    event.preventDefault();
+    // gjør noe ved submit
+});
+```
+
+Ved submit må man kalle `preventDefault` på eventet om man ikke vil at nettleseren skal laste siden på nytt.
+
+---
+
+# Oppgave 1
+
+* Legg til submit-listener på `#nameform`. Den trigges når man trykker join-knappen.
+* Når submit trigges, les ut verdien fra navne-inputfeltet og log det til console
+* Om navnet ikke er tomt, aktiver `#sendbutton`.
+
+Sjekk at du kan fylle i et navn og trykke join, og at det dukker opp i consolen før du går videre.
+Sjekk også at send-knappen blir aktivert etter å ha trykket join.
+
+---
+class: center middle
+# Løsningsforslag 1
+
+---
+
+.losningsforslag[
+```
+// henter ut form-elementet og legger til en listener på submit
+document.querySelector('#nameform').addEventListener('submit', function (event) {
+    // hindrer refresh av siden
+    event.preventDefault();
+
+    // henter ut inputfeltet for navn og leser ut verdien
+    var name = document.querySelector('#name').value;
+    console.log(name);
+
+    if (name !== '') { // om navn ikke tomt
+        // hent ut send-knappen og sett disabled til false
+        document.querySelector('#sendbutton').disabled = false;
+    }
+});
+```]
+
+---
+
+# WebSockets Intro
+
+Forrige kursdag brukte vi `fetch` for å søke etter bilder. Det å kalle fetch førte til en http-request til en server,
+som så svarte med en liste over bilder. Http fungerer alltid på denne måten, ved at klienten gjør et kall mot serveren og får data tilbake.
+Serveren kan aldri sende data til klienten uten at klienten har sendt en request først.
+
+Skal man lage en chat, er dette ikke helt optimalt. Eneste måten å få nye meldinger på er å sende en request til serveren, så for å få til en
+chat der nye meldinger dukker opp med en gang, må man regelrett spamme serveren med requests. Er det mange brukere som gjør dette samtidig vil
+serveren fort krasje.
+
+Websockets, derimot, er en toveis protokoll. Etter at en tilkobling er opprettet, kan både klient og server sende data til hverandre når de ønsker.
+Det gir mulighet for real-time applikasjoner som chat, spill osv.
+
+---
+
+# WebSockets API
+
+For å opprette en WebSocket-tilkobling, må man sende inn URLen til serveren man vil koble seg til.
+Merk at det brukes `ws` i URLen i stedet for `http`.
+
+```
+var websocket = new WebSocket('ws://bekk-chat.herokuapp.com');
+```
+
+--
+
+For å sende meldinger, kaller man `send` på websocket-objektet.
+
+```
+websocket.send('hei, hei');
+```
+
+--
+
+For å lytte på meldinger legger man til en funksjon som kalles hver gang websocketen får en melding fra serveren.
+Denne funksjonen får inn et event, og dataen fra serveren ligger på `.data` på dette eventet.
+
+```
+websocket.onmessage = function(event) {
+    console.log(event.data);
+}
+```
+
+---
+
+# JSON
+
+Websockets kan bare sende tekst frem og tilbake, mens man trenger ofte å sende mer avansert data.
+For å gjøre det kan man bruke JSON. JSON er et tekst-format som er lett å konvertere til og fra javascript-objekter.
+
+`JSON.stringify` konverterer et javascript-objekt om til JSON-tekst
+
+```
+var objekt = {
+    id: 33,
+    navn: 'Mats'
+}
+var tekst = JSON.stringify(objekt);
+// gir '{"id": 33, "navn": "Mats"}' som en tekststreng
+```
+
+Tilsvarende kan man konvertere tekst tilbake til javascript-objekt med `JSON.parse`
+
+```
+var tekst2 = '{"id":99,"navn":"Kent"}';
+var objekt2 = JSON.parse(tekst2);
+// kan nå kalle objekt2.id og objekt2.navn
+```
+---
+
+# JOINE-protokoll
+
+For å bli med i chatten krever serveren at man har sagt hva man vil hete. Serveren forventer JSON-tekst som den
+kan konvertere til et objekt på formen
+
+```
+{
+    type: 'name',
+    name: 'Mats'
+}
+```
+
+Siden det skal sendes mye forskjellig data frem og tilbake etterhvert, har vi et type-felt som sier hva slags data det er.
+For å sette navn, skal typen være `name`. I tillegg må man sende med navnet man vil ha.
+
+---
+
+#Oppgave 2
+
+* I toppen av javascriptfilen, opprett en websocket-tilkobling til chatte-serveren
+ * Den ligger på URL `ws://bekk-chat.herokuapp.com`
+* Inne i eventlisteneren fra forrige oppgave (når brukeren har trykket join), send det valgte navnet til serveren via websocketen.
+ * Objektet må være på formen fra forrige slide
+ * Huske å gjøre objektet om til en tekst-streng før det sendes
+
+I denne oppgaven får man ikke et synlig resultat, men det kommer straks. Sjekk i console at ingen ting krasjer før du går videre.
+
+---
+class: center middle
+# Løsningsforslag 2
+
+Ny kode på formen
+
+```
+// gammel linje
+*// ny linje
+*// ny linje
+// gammel linje
+```
+
+---
+
+.losningsforslag[
+```
+*// oppretter en websocket-tilkobling til riktig url
+*var websocket = new WebSocket('ws://bekk-chat.herokuapp.com');
+
+document.querySelector('#nameform').addEventListener('submit', function (event) {
+    event.preventDefault();
+
+    var name = document.querySelector('#name').value;
+
+    if (name !== '') {
+*       // lag et objekt på riktig form og med valgt navn
+*       var data = {
+*           type: 'name',
+*           name: name
+*       };
+*       // gjør det om til en tekststreng
+*       var dataString = JSON.stringify(data);
+*       // send tekststrengen via websocket
+*       websocket.send(dataString);
+
+        document.querySelector('#sendbutton').disabled = false;
+    }
+});
+```]
+
+---
+
+# Oppgave 3
+
+* Legg til en funksjon på websocketen sin `onmessage` som beskrevet tidligere.
+* I denne funksjonen, les ut data fra eventet og konverter det fra JSON til et objekt
+* Log dette objektet til console
+
+Om alt har gått riktig, skal man nå i det man trykker join få tilsendt litt data fra serveren.
+I console kan du se hva du mottar.
+
+
+---
+class: center middle
+# Løsningsforslag 3
+
+Her må du kanskje scrolle litt
+
+---
+
+.losningsforslag[
+```
+var websocket = new WebSocket('ws://bekk-chat.herokuapp.com');
+
+document.querySelector('#nameform').addEventListener('submit', function (event) {
+    event.preventDefault();
+
+    var name = document.querySelector('#name').value;
+
+    if (name !== '') {
+        var data = {
+            type: 'name',
+            name: name
+        };
+
+        var dataString = JSON.stringify(data);
+        websocket.send(dataString);
+
+        document.querySelector('#sendbutton').disabled = false;
+    }
+});
+
+*// Legger til en funksjon på onmessage
+*websocket.onmessage = function(event) {
+*   // Leser ut data fra eventet og konverterer det til et objekt
+*   var data = JSON.parse(event.data);
+*   // Logger det vi mottar til console
+*   console.log(data);
+}
+```]
+---
+
+#Test
+Beskrivelse av interaksjon, joine, sende meldinger, joine/leave, rename
+
+        Løsningsforslag med kommentarer
+
+        # queryselector, .value, .enabled, .innerHTML, eventlistener form preventdefault
+        - submit listener på form, lese ut verdi, sette enabled om ikke tom
+        # websockets intro, json/text parse stringify, intro til protkoll
+        - lage websocket, sende til websocket type joine med json stringify,
+        - onmessage, json parse, console.log
+        # forklare protokollen for message/messages, dom-strukturen det må være, for løkke, template strings
+        - om type messages, renderSingleMessage n ganger, obs ikke bry seg om dato feil
+        - renderSingleMessage
+        # server forventer type message
+        - form listener, les ut verdi, nullstill, send til websocket
+        # active users, type users, data.users liste med navn
+        - active users, rendre over løkke til #users
+        # active users, 3 actions som har forskjellig data
+        - connection beskjeder, legge til i chaten
+        # date
+        - visningslogikk
+
+---
+
+.losningsforslag[```javascript
+document.querySelector('#sendform').addEventListener('submit', function (event) {
+    event.preventDefault();
+
+    var sendmessageInput = document.querySelector("#sendmessage");
+    var message = sendmessageInput.value;
+    sendmessageInput.value = ''; // reset
+
+*    websocket.send(JSON.stringify({
+*        type: 'message',
+*        message: message
+*    }));
+});
+
+
+websocket.onmessage = function(event) {
+    var data = JSON.parse(event.data);
+    console.log(data);
+
+    if (data.type === 'messages') {
+        renderMessages(data.messages);
+    } else if (data.type === 'message') {
+        renderSingleMessage(data);
+    } else if (data.type === 'users') {
+*       renderActiveUsers(data);
+        showConnectionMessage(data);
+    }
+};
+```]
+---
+
+class: center middle bekk-top
+
+# Takk for oss!
+
+bekk.no/jobb
+
+    </textarea>
+    <script src="https://cdn.rawgit.com/bekk/remark/master/vendor/remark.min.js" type="text/javascript"></script>
+    <script type="text/javascript">
+      'use strict';
+      var slideshow = remark.create({
+        ratio: '16:9',
+        highlightLanguage: 'javascript',
+        highlightStyle: 'monokai',
+        navigation: {
+          scroll: false
+        },
+          highlightLines: true
+      });
+
+    </script>
+  </body>
+</html>

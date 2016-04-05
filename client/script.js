@@ -9,10 +9,12 @@ document.querySelector('#nameform').addEventListener('submit', function (event) 
     var name = document.querySelector('#name').value;
 
     if (name !== '') {
-        websocket.send(JSON.stringify({
+        var data = {
             type: 'name',
             name: name
-        }));
+        };
+        var dataString = JSON.stringify(data);
+        websocket.send(dataString);
 
         document.querySelector('#sendbutton').disabled = false;
     }
