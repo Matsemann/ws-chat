@@ -1,8 +1,6 @@
 var websocketServerUrl = location.origin.replace(/^http/, 'ws');
 var websocket = new WebSocket(websocketServerUrl);
 
-var messageElement = document.querySelector('#messages');
-
 document.querySelector('#nameform').addEventListener('submit', function (event) {
     event.preventDefault();
 
@@ -20,44 +18,27 @@ document.querySelector('#nameform').addEventListener('submit', function (event) 
     }
 });
 
-document.querySelector('#sendform').addEventListener('submit', function (event) {
-    event.preventDefault();
-
-    var sendmessageInput = document.querySelector("#sendmessage");
-    var message = sendmessageInput.value;
-    sendmessageInput.value = ''; // reset
-
-    websocket.send(JSON.stringify({
-        type: 'message',
-        message: message
-    }));
-});
-
-
 websocket.onmessage = function(event) {
     var data = JSON.parse(event.data);
     console.log(data);
 
     if (data.type === 'messages') {
-        renderMessages(data.messages);
+        var messages = data.messages;
+        for (var i = 0; i < messages.length; i++) {
+            var singleMessage = messages[i];
+            renderMessage(singleMessage);
+        }
     } else if (data.type === 'message') {
-        renderSingleMessage(data);
+        renderMessage(data);
     } else if (data.type === 'users') {
-        renderActiveUsers(data);
+        renderActiveUsers(data.users);
         showConnectionMessage(data);
     }
 };
 
+function renderMessage(message) {
 
-function renderMessages(messages) {
-    for (var i = 0; i < messages.length; i++) {
-        var singleMessage = messages[i];
-        renderSingleMessage(singleMessage);
-    }
-}
-
-function renderSingleMessage(singleMessage) {
-    var time = new Date(singleMessage.time);
+    var time = new Date(message.time);
     var hour = time.getHours();
     var minutes = time.getMinutes();
     var seconds = time.getSeconds();
@@ -72,20 +53,33 @@ function renderSingleMessage(singleMessage) {
         seconds = '0' + seconds;
     }
 
+    var messageElement = document.querySelector('#messages');
+
     var messageHtml = `
         <div class="message">
-            <span class="name">${singleMessage.name}</span>
+            <span class="name">${message.name}</span>
             <span class="time">${hour}:${minutes}:${seconds}</span>
-            <span class="text">${singleMessage.message}</span>
+            <span class="text">${message.message}</span>
         </div>
     `;
 
     messageElement.innerHTML = messageHtml + messageElement.innerHTML;
 }
 
-function renderActiveUsers(data) {
-    var activeUsers = data.users;
+document.querySelector('#sendform').addEventListener('submit', function (event) {
+    event.preventDefault();
 
+    var sendmessageInput = document.querySelector("#sendmessage");
+    var message = sendmessageInput.value;
+    sendmessageInput.value = ''; // reset
+
+    websocket.send(JSON.stringify({
+        type: 'message',
+        message: message
+    }));
+});
+
+function renderActiveUsers(activeUsers) {
     var usersElement = document.querySelector('#users');
 
     var html = '';
@@ -113,5 +107,6 @@ function showConnectionMessage(data) {
 
     var html = `<div class="connection">${message}</div>`;
 
+    var messageElement = document.querySelector('#messages');
     messageElement.innerHTML = html + messageElement.innerHTML;
 }

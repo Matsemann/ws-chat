@@ -11,7 +11,7 @@
 
 class: front-page
   # Webutvikling 101
-  ## DEL 3<br>Chatteoppgave
+  ## DEL 3<br>Chatteoppgave<br><br>Mats Krüger Svensson
 
 ---
 #Introduksjon
@@ -314,66 +314,511 @@ document.querySelector('#nameform').addEventListener('submit', function (event) 
 ```]
 ---
 
-#Test
-Beskrivelse av interaksjon, joine, sende meldinger, joine/leave, rename
+# Template String - Repetisjon
 
-        Løsningsforslag med kommentarer
+Bruker `backticks` (shift + knappen før backspace), gjør at man kan fylle inn verdier med `${variabelnavn}`.
 
-        # queryselector, .value, .enabled, .innerHTML, eventlistener form preventdefault
-        - submit listener på form, lese ut verdi, sette enabled om ikke tom
-        # websockets intro, json/text parse stringify, intro til protkoll
-        - lage websocket, sende til websocket type joine med json stringify,
-        - onmessage, json parse, console.log
-        # forklare protokollen for message/messages, dom-strukturen det må være, for løkke, template strings
-        - om type messages, renderSingleMessage n ganger, obs ikke bry seg om dato feil
-        - renderSingleMessage
-        # server forventer type message
-        - form listener, les ut verdi, nullstill, send til websocket
-        # active users, type users, data.users liste med navn
-        - active users, rendre over løkke til #users
-        # active users, 3 actions som har forskjellig data
-        - connection beskjeder, legge til i chaten
-        # date
-        - visningslogikk
+```javascript
+var img = {
+    url: "http://flickr.com/bilde.jpg",
+    title: "Kult bilde"
+};
+
+var html = `
+    <figure>
+        <img src="${img.url}" />
+        <figcaption>${img.title}</figcaption>
+    </figure>
+        `;
+```
 
 ---
 
-.losningsforslag[```javascript
-document.querySelector('#sendform').addEventListener('submit', function (event) {
+# Meldinger - Protokoll
+
+Som man kan se i console fra forrige oppgave, får man et objekt med type `messages` i det en bruker joiner.
+Dette objektet inneholder en liste over meldinger som har kommet før brukeren joinet, med den nyeste til slutt.
+
+```json
+{
+  "type": "messages",
+  "messages": [{
+      "name": "MM",
+      "message": "asdas",
+      "time": "2016-04-05T14:13:56.149Z"
+    }, {
+      "name": "Mats",
+      "message": "Hei",
+      "time": "2016-04-05T14:14:57.723Z"
+    },{
+      "name": "Kent",
+      "message": "Hei, hei",
+      "time": "2016-04-05T14:15:06.382Z"
+    }]
+}
+```
+
+---
+
+
+
+
+# Meldinger - Protokoll 2
+
+Når en bruker sender en ny melding i chaten, kommer det fra serveren på denne formen. Merk forskjell på type fra
+forrige slide (message vs messages)
+
+```
+{
+  "type": "message",
+  "name": "sd",
+  "message": "asdasd",
+  "time": "2016-04-05T16:30:56.907Z"
+}
+```
+
+---
+
+# Meldinger HTML
+
+Den medfølgende CSSen forventer at meldinger blir gjort om til HTML med følgende struktur:
+
+```html
+<div class="message">
+    <span class="name">Navn på avsender</span>
+    <span class="time">tidspunkt</span>
+    <span class="text">innhold</span>
+</div>
+```
+
+
+---
+
+# Oppgave 4
+
+* Lag en funksjon som tar inn en melding og legger til HTML lignende forrige slide øverst i `#messages`-elementet
+* I `onmessage` funksjonen, sjekk om typen er av `messages` og send i så fall hver melding til funksjonen du nettopp lagde.
+* Om typen er av `message`, send den til samme funksjon
+
+Om alt har gått riktig, skal man i det man trykker join nå se de siste meldingene. Tidspunktet kan
+kanskje være litt feil og stygt, det fikser vi senere.
+
+Nye meldinger skal også dukke opp fortløpende, gå til http://bekk-chat.herokuapp.com/ og send noen meldinger
+der og sjekk om de dukker opp i din klient.
+
+
+---
+class: center middle
+# Løsningsforslag 4
+---
+
+.losningsforslag[
+```
+var websocket = new WebSocket('ws://bekk-chat.herokuapp.com');
+
+document.querySelector('#nameform').addEventListener('submit', function (event) {
     event.preventDefault();
 
-    var sendmessageInput = document.querySelector("#sendmessage");
-    var message = sendmessageInput.value;
-    sendmessageInput.value = ''; // reset
+    var name = document.querySelector('#name').value;
 
-*    websocket.send(JSON.stringify({
-*        type: 'message',
-*        message: message
-*    }));
+    if (name !== '') {
+        var data = {
+            type: 'name',
+            name: name
+        };
+        var dataString = JSON.stringify(data);
+        websocket.send(dataString);
+
+        document.querySelector('#sendbutton').disabled = false;
+    }
 });
-
 
 websocket.onmessage = function(event) {
     var data = JSON.parse(event.data);
     console.log(data);
 
+*   // sjekker typen
+*   if (data.type === 'messages') {
+*       // henter meldingene fra data
+*       var messages = data.messages;
+*
+*       // iterer over hver melding med en for-løkke og rendrer den
+*       for (var i = 0; i < messages.length; i++) {
+*           var singleMessage = messages[i];
+*           renderMessage(singleMessage);
+*       }
+*   } else if (data.type === 'message') {
+*       // om det var en enkelt melding rendrer vi den bare
+*       renderMessage(data);
+*   }
+};
+
+*function renderMessage(message) {
+*   // henter ut elementet
+*   var messageElement = document.querySelector('#messages');
+*
+*   // lager HTMLen for en melding
+*   var messageHtml = `
+*       <div class="message">
+*           <span class="name">${message.name}</span>
+*           <span class="time">${message.time}</span>
+*           <span class="text">${message.message}</span>
+*       </div>
+*   `;
+*
+*   // Setter innholdet i elementet til å være meldingen pluss hva enn det var før
+*   messageElement.innerHTML = messageHtml + messageElement.innerHTML;
+*}
+```]
+
+---
+
+# Meldinger - Protokoll 3
+
+For å sende en melding til serveren skal objektet se slik ut:
+
+```
+{
+    type: 'message',
+    message: 'Min melding'
+}
+```
+
+Serveren legger selv på tidspunkt og hvem som sendte meldingen før den så sender meldingen videre
+til alle som er koblet på chaten (inkludert den som sendte meldingen).
+
+
+---
+
+#Oppgave 5
+
+* Legg til en submit-listener på meldinger-formet
+* Når denne trigges, send meldingen brukeren skrev inn til serveren og nullstill teksten i tekstfeltet
+
+
+
+---
+class: center middle
+# Løsningsforslag 5
+---
+
+.losningsforslag[
+```
+// resten av koden er lik, men nå med dette i bunn:
+
+// legger på submit-listener på formet
+document.querySelector('#sendform').addEventListener('submit', function (event) {
+    // hindrer refresh
+    event.preventDefault();
+
+    // henter ut input-elementet der brukeren skriver meldingen
+    var sendmessageInput = document.querySelector("#sendmessage");
+    // henter ut verdien
+    var message = sendmessageInput.value;
+    // nullstiller feltet
+    sendmessageInput.value = ''; // reset
+
+    // lager objektet, gjør det om til JSON og sender det, alt i samme slengen
+    websocket.send(JSON.stringify({
+        type: 'message',
+        message: message
+    }));
+});
+```]
+
+---
+
+
+# Brukere - Protokoll
+
+Når brukere joiner, forsvinner eller bytter navn blir det sendt data fra serveren til alle klienter.
+Denne dataen er av typen `users`, og inneholder en liste over navn på brukere som er tilkoblet.
+I tillegg er det en action som sier hva som har skjedd, og litt forskjellig data avhengig av hva som skjedde.
+
+```
+{
+    type: 'users',
+    users: ['Mats', 'Kent', 'Ingvild'],
+    ...
+}
+```
+---
+
+
+# Brukere Join - Protokoll
+
+Når en bruker joiner får man med navnet på den nye brukeren
+
+```
+{
+    type: 'users',
+    users: ['Mats', 'Kent', 'Ingvild'],
+    action: 'joined',
+    name: 'Mats'
+}
+```
+---
+
+
+# Brukere Forsvinner - Protokoll
+
+Når en bruker forsvinner får man navnet på hvem som forsvant
+
+```
+{
+    type: 'users',
+    users: ['Kent', 'Ingvild'],
+    action: 'left',
+    name: 'Mats'
+}
+```
+---
+
+
+# Brukere Endret Navn - Protokoll
+
+Om en bruker har byttet navn får man nytt og gammelt navn
+
+```
+{
+    type: 'users',
+    users: ['Mats2', 'Kent', 'Ingvild'],
+    action: 'renamed',
+    name: 'Mats2',
+    oldname: 'Mats'
+}
+```
+
+---
+
+# Oppgave 6
+
+* Når det kommer data av typen `users` fra serveren, hent ut navnene til de påloggede brukerne og vis dem i `#users`-elementet
+ * For å få riktig styling legg til HTML på formen `<span class="name">Navn</span>` for hver bruker
+
+Skal nå kunne se hvem som er tilstede. Åpne flere vinduer og join og lukk vinduer og sjekk at listen over brukere endres.
+
+
+---
+class: center middle
+# Løsningsforslag 6
+
+---
+
+
+.losningsforslag[
+```
+// endret litt inni her
+websocket.onmessage = function(event) {
+    var data = JSON.parse(event.data);
+    console.log(data);
+
     if (data.type === 'messages') {
-        renderMessages(data.messages);
+        var messages = data.messages;
+        for (var i = 0; i < messages.length; i++) {
+            var singleMessage = messages[i];
+            renderMessage(singleMessage);
+        }
     } else if (data.type === 'message') {
-        renderSingleMessage(data);
+        renderMessage(data);
+*   } else if (data.type === 'users') {
+*       // kaller funksjonen med de aktive brukerne
+*       renderActiveUsers(data.users);
+*   }
+};
+
+*function renderActiveUsers(activeUsers) {
+*   // henter elementet vi vil putte navnene i
+*   var usersElement = document.querySelector('#users');
+*
+*   var html = '';
+*
+*   // itererer over alle navnene og lager en stor html-string
+*   for (var i = 0; i < activeUsers.length; i++) {
+*       var name = activeUsers[i];
+*       html += `
+*           <span class="name">${name}</span>
+*       `;
+*   }
+*
+*   // setter innholdet til elementet til å være html vi har laget
+*   usersElement.innerHTML = html;
+*}
+
+// resten av koden er lik
+```]
+
+---
+
+# Oppgave 7
+
+* Sjekk hvilken action det er når det kommer inn data av typen `users` og vis en passende melding i chaten.
+ * Blir stylet riktig om HTMLen er på formen `<div class="connection">${message}</div>`
+
+F. eks. kan det når en bruker joiner komme en melding om "Mats har joinet",
+eller om det var navnebytte "Mats har byttet navn til Mats2".
+
+
+---
+class: center middle
+# Løsningsforslag 7
+
+---
+
+.losningsforslag[
+```
+// endret litt inni her
+websocket.onmessage = function(event) {
+    var data = JSON.parse(event.data);
+    console.log(data);
+
+    if (data.type === 'messages') {
+        var messages = data.messages;
+        for (var i = 0; i < messages.length; i++) {
+            var singleMessage = messages[i];
+            renderMessage(singleMessage);
+        }
+    } else if (data.type === 'message') {
+        renderMessage(data);
     } else if (data.type === 'users') {
-*       renderActiveUsers(data);
-        showConnectionMessage(data);
+        renderActiveUsers(data.users);
+
+*       // Kall vår nye funksjon
+*       showConnectionMessage(data);
     }
 };
+
+*function showConnectionMessage(data) {
+*   var message;
+*
+*   // Sjekker hvilken action det var, og lager forskjellige beskjeder
+*   if (data.action === 'joined') {
+*       message = `${data.name} has joined`;
+*   } else if (data.action === 'left') {
+*       message = `${data.name} has left`;
+*   } else if (data.action === 'renamed') {
+*       message = `${data.oldname} has changed name to ${data.name}`;
+*   }
+*
+*   // Legger beskjeden inni litt HTML for stylingens skyld
+*   var html = `<div class="connection">${message}</div>`;
+*
+*   // Henter ut elementet og legger det nye innholdet inn i tillegg til hva enn som var der fra før
+*   var messageElement = document.querySelector('#messages');
+*   messageElement.innerHTML = html + messageElement.innerHTML;
+*}
+
+// Resten er likt som før
 ```]
+
 ---
+
+# Datoer i Javascript
+
+Datoene så langt er på formen `2016-04-05T19:34:54.406Z`, noe som ikke er veldig pent og troligvis feil med noen timer.
+Z-en bakerst betyr at det er i UTC-tidssone, mens det mest logiske er det å vise det i riktig tid for brukeren.
+
+Javascript har innebygd støtte for datoer, via `Date`-klassen. Om man sender inn en dato-tekststreng på formen over, vil
+den bli tolket automatisk til tidssonen til brukeren av nettleseren. Om man ikke sender inn noen ting får man datoen/tidspunktet
+her og nå. [MDN](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Date) har info om mange funksjoner som
+kan kalles på date-objekter.
+
+```
+var date1 = new Date(); // her og nå
+var date2 = new Date('2016-04-05T19:34:54.406Z'); // fra et spesifikt tidspunkt
+
+date2.getFullYear();
+date2.getMinutes();
+// osv.
+```
+
+---
+
+# Oppgave 8
+
+* Gjør slik at tidspunktene på meldinger er på formen hh:mm:ss, f. eks. 19:46:06
+
+
+---
+class: center middle
+# Løsningsforslag 8
+
+---
+
+.losningsforslag[
+```
+function renderMessage(message) {
+*   // lager et dato-objekt utifra dato-teksten
+*   var time = new Date(message.time);
+*   // leser ut de forskjellige verdiene vi ønsker
+*   var hour = time.getHours();
+*   var minutes = time.getMinutes();
+*   var seconds = time.getSeconds();
+*
+*   // siden getHours f. eks. kan returnere 7, slenger
+*   // vi på en 0 foran slik at det står 07
+*   if (hour < 10) {
+*       hour = '0' + hour;
+*   }
+*   if (minutes < 10) {
+*       minutes = '0' + minutes;
+*   }
+*   if (seconds < 10) {
+*       seconds = '0' + seconds;
+*   }
+
+    var messageElement = document.querySelector('#messages');
+
+*   // bruker de nye verdiene for å vise tidspunkt
+    var messageHtml = `
+        <div class="message">
+            <span class="name">${message.name}</span>
+*           <span class="time">${hour}:${minutes}:${seconds}</span>
+            <span class="text">${message.message}</span>
+        </div>
+    `;
+
+    messageElement.innerHTML = messageHtml + messageElement.innerHTML;
+}
+
+// Resten er likt som før
+```]
+
+---
+# Bonus: Sikkerhet
+
+I denne oppgaven har vi tatt beskjeder fra andre brukere og puttet rett i HTMLen, kan du se hvorfor det kan være farlig?
+
+--
+
+Om brukeren sendte en beskjed med innholdet: `<b>Hei</b> på deg`<br>
+og vi dytter den rett inn i HTMLen, vil HTMLen faktisk tolkes og noe av skriften bli fet.
+
+Det er kanskje ikke så farlig, men hva om man skriver: `<script>alert('WARNING');</script>`<br>
+så kjøres faktisk den koden også når den dyttes inn i HTMLen! Så da kan ondsinnede brukere faktisk sende kode
+via chat som vil kjøres på andres maskiner. Dette er et typisk "XSS"-angrep.
+
+Denne hackingen vil ikke fungere her, da chatte-serveren tar hensyn til dette. Men det er noe å være obs på, aldri stol på brukerdata.
+---
+#Ferdig!
+
+* Er du interessert i å se hvordan serveren er laget, kan du [se her](https://github.com/Matsemann/ws-chat).
+Sjekk ut index.js filen og chat.js. Det meste ligner, bortsett fra at APIet for websockets er litt annerledes enn
+i en nettleser, og vi her må holde styr på flere tilkoblinger samtidig.
+
+* Forslag til ting å gjøre videre
+ * Endre på stylingen, f. eks. få den til å ligne mer på andre chatte-programmer som Slack og Messenger. Der kommer nyeste
+meldinger nederst og man scrolles automatisk ned til nyeste melding, meldingsboksen ligger i bunn.
+ * Endre visningen av tidspunkt til å være "For 32 sekunder siden", "For 5 minutter siden" osv.
+ * Dine egne idéer.
+ * Se på en av de andre oppgavene
+
+---
+
 
 class: center middle bekk-top
 
 # Takk for oss!
-
-bekk.no/jobb
 
     </textarea>
     <script src="https://cdn.rawgit.com/bekk/remark/master/vendor/remark.min.js" type="text/javascript"></script>
