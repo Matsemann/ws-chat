@@ -141,7 +141,11 @@ class Chat {
 }
 
 function sanitizeHtml(string) {
-    return string.replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    if (string) {
+        return string.replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    } else {
+        return '';
+    }
 }
 
 module.exports = Chat;
