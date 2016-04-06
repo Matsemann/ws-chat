@@ -141,7 +141,7 @@ class Chat {
 }
 
 function sanitizeHtml(string) {
-    if (string) {
+    if ((typeof string) === 'string') {
         return string.replace(/</g, '&lt;').replace(/>/g, '&gt;');
     } else {
         return '';
