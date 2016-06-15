@@ -13,7 +13,12 @@ class Chat {
             console.log(`[CONNECTED] ${ws._socket.remoteAddress}/${ws.username} connected`);
 
             ws.on('message', (stringData) => {
-                var data = JSON.parse(stringData);
+                var data;
+                try {
+                    data = JSON.parse(stringData);
+                } catch (e) {
+                    return;
+                }
 
                 if (data.type === 'name') {
                     this.setName(sanitizeHtml(data.name), ws);
